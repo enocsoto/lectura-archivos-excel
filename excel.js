@@ -1,27 +1,50 @@
-const XLSX = require('xlsx');
+const express = require("express");
+const multer = require("multer");
+const xlsx = require("xlsx");
 
-// Ruta del archivo Excel a leer
-const rutaArchivo = './tabla.xlsx';
+const app = express();
 
-// Carga el archivo Excel
-const libro = XLSX.readFile(rutaArchivo);
+// Configuración de multer para almacenar los archivos subidos en memoria como streams
+const storage = multer.memoryStorage();
 
-// Obtiene el nombre de todas las hojas en el libro
-const nombresHojas = libro.SheetNames;
+const upload = multer({ storage });
 
-// Lee y procesa cada hoja del libro
-const datosHojas = nombresHojas.map(nombreHoja => {
-  // Obtiene la hoja actual
-  const hoja = libro.Sheets[nombreHoja];
+// Endpoint para subir y convertir el archivo de Excel a JSON
+app.post("/upload-excel", upload.single("excelFile"), (req, res) => {
+  try {
+    // Obtener el buffer del archivo subido
+    const buffer = req.file.buffer;
 
-  // Convierte la hoja a un objeto JSON
-  const datos = XLSX.utils.sheet_to_json(hoja);
+    // Leer el archivo de Excel desde el buffer
+    const workbook = xlsx.read(buffer, { type: "buffer" });
 
-  // Devuelve los datos de la hoja actual
-  return { hoja: nombreHoja, datos };
+      const dataSet = [];
+      for (const key in workbook.Sheets) {
+        if (Object.hasOwnProperty.call(workbook.Sheets, key)) {
+          const element = workbook.Sheets[key];
+          dataSet.push({
+            name_sheet: key,
+            data: xlsx.utils.sheet_to_json(element),
+          });
+        }
+      }
+      // Enviar el JSON como respuesta
+      return res.json(dataSet);
+    
+   
+    res.status(404).json({ error: true, message: "Tipo no soportado" });
+
+    // Obtener el nombre de la primera hoja de cálculo
+  } catch (error) {
+    // Manejar cualquier error
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "Ocurrió un error al leer el archivo de Excel." });
+  }
 });
 
-// Imprime los datos de cada hoja
-datosHojas.map(datosHoja => {
-  console.log(`Datos de la hoja "${datosHoja.hoja}":`, datosHoja.datos);
+// Iniciar el servidor
+app.listen(300, () => {
+  console.log("Servidor iniciado en el puerto 3000");
 });
