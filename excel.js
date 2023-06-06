@@ -1,29 +1,27 @@
 const XLSX = require('xlsx');
 
-class ExcelReader {
-  constructor(filePath) {
-    this.filePath = filePath;
-  }
+// Ruta del archivo Excel a leer
+const rutaArchivo = './tabla.xlsx';
 
-  readAllSheets() {
-    const workbook = XLSX.readFile(this.filePath);
-    const sheetNames = workbook.SheetNames;
+// Carga el archivo Excel
+const libro = XLSX.readFile(rutaArchivo);
 
-    const sheetData = sheetNames.map(sheetName => {
-      const sheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(sheet);
-      return { sheetName, data };
-    });
+// Obtiene el nombre de todas las hojas en el libro
+const nombresHojas = libro.SheetNames;
 
-    return sheetData;
-  }
-}
+// Lee y procesa cada hoja del libro
+const datosHojas = nombresHojas.map(nombreHoja => {
+  // Obtiene la hoja actual
+  const hoja = libro.Sheets[nombreHoja];
 
-// Uso de la clase ExcelReader
-const filePath = './tabla.xlsx';
-const excelReader = new ExcelReader(filePath);
-const sheetsData = excelReader.readAllSheets();
+  // Convierte la hoja a un objeto JSON
+  const datos = XLSX.utils.sheet_to_json(hoja);
 
-sheetsData.map(sheetData => {
-  console.log(`Datos de la hoja "${sheetData.sheetName}":`, sheetData.data);
+  // Devuelve los datos de la hoja actual
+  return { hoja: nombreHoja, datos };
+});
+
+// Imprime los datos de cada hoja
+datosHojas.map(datosHoja => {
+  console.log(`Datos de la hoja "${datosHoja.hoja}":`, datosHoja.datos);
 });
